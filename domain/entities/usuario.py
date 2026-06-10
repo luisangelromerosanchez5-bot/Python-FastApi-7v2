@@ -18,5 +18,6 @@ class Usuario(Base):
     correo: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     contrasena_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     rol: Mapped[str] = mapped_column(String(20), nullable=False, default=RolUsuario.USUARIO.value)
+    ciudad: Mapped[str | None] = mapped_column(String(100), nullable=True)
     compania_id: Mapped[int | None] = mapped_column(ForeignKey("companias.id"), nullable=True)
     fecha_creacion: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)

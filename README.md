@@ -60,7 +60,8 @@ El seeding crea estos usuarios:
 
 | Correo | Contraseña | Rol | Uso |
 | --- | --- | --- | --- |
-| `admin@demo.com` | `Admin123` | `ADMIN` | Puede crear, actualizar, eliminar y ejecutar el endpoint transaccional. |
+| `admin@demo.com` | `Admin123` | `ADMIN` Medellin | Puede consultar, crear, crear en lote y eliminar. No puede actualizar con PUT/PATCH. |
+| `admin.bogota@demo.com` | `Admin123` | `ADMIN` Bogota | Puede consultar, crear, crear en lote y actualizar con PUT/PATCH. No puede eliminar. |
 | `usuario@demo.com` | `Usuario123` | `USUARIO` | Puede consultar, crear y editar empleados de su propia compañía. |
 
 ## CRUD de colecciones
@@ -161,7 +162,7 @@ Endpoints:
 | `POST` | `/api/auth/login` | Valida credenciales y devuelve JWT. |
 | `GET` | `/api/auth/perfil` | Devuelve el usuario autenticado. |
 
-La contraseña nunca se guarda en texto plano. Se usa PBKDF2-HMAC-SHA256 con salt aleatorio. El JWT usa HS256 y contiene claims como `sub`, `correo`, `rol`, `compania_id`, `permisos` y `exp`.
+La contraseña nunca se guarda en texto plano. Se usa PBKDF2-HMAC-SHA256 con salt aleatorio. El JWT usa HS256 y contiene claims como `sub`, `correo`, `rol`, `ciudad`, `compania_id`, `permisos` y `exp`.
 
 ### Autorización por roles
 
@@ -177,9 +178,16 @@ Matriz aplicada:
 
 ### Autorización por políticas
 
-Policy implementada: `EsPropietarioDeCompania`.
+Policies implementadas: `EsPropietarioDeCompania` y permisos de `ADMIN` por ciudad.
 
-Regla: un usuario con rol `USUARIO` solo puede actualizar empleados cuya `compania_id` coincida con la `compania_id` del token/usuario autenticado. El `ADMIN` queda exento y puede editar cualquier empleado.
+Regla de compania: un usuario con rol `USUARIO` solo puede actualizar empleados cuya `compania_id` coincida con la `compania_id` del token/usuario autenticado.
+
+Regla de admins por ciudad:
+
+| Ciudad | Permisos |
+| --- | --- |
+| Medellin | `GET`, `POST`, `POST /api/empleados/lote`, `POST /api/companias/con-empleados`, `DELETE` |
+| Bogota | `GET`, `POST`, `POST /api/empleados/lote`, `POST /api/companias/con-empleados`, `PUT`, `PATCH` |
 
 En FastAPI se implementa como dependencia compuesta en `api/middlewares/security.py`, equivalente conceptual a `[Authorize(Policy="...")]` en ASP.NET Core.
 

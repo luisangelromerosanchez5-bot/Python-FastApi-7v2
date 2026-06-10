@@ -11,18 +11,49 @@ async def seed_data(db: AsyncSession):
 
     existing_companias = await db.execute(select(Compania).limit(1))
     if existing_companias.scalar_one_or_none() is not None:
-        existing_usuario = await db.execute(select(Usuario).limit(1))
-        if existing_usuario.scalar_one_or_none() is None:
+        admin_medellin = (await db.execute(select(Usuario).where(Usuario.correo == "admin@demo.com"))).scalar_one_or_none()
+        if admin_medellin is None:
             db.add(
                 Usuario(
-                    nombre="Administrador",
+                    nombre="Administrador Medellin",
                     correo="admin@demo.com",
                     contrasena_hash=hasher.hash("Admin123"),
                     rol="ADMIN",
+                    ciudad="MEDELLIN",
                     compania_id=None,
                 )
             )
-            await db.commit()
+        else:
+            admin_medellin.ciudad = admin_medellin.ciudad or "MEDELLIN"
+
+        admin_bogota = (await db.execute(select(Usuario).where(Usuario.correo == "admin.bogota@demo.com"))).scalar_one_or_none()
+        if admin_bogota is None:
+            db.add(
+                Usuario(
+                    nombre="Administrador Bogota",
+                    correo="admin.bogota@demo.com",
+                    contrasena_hash=hasher.hash("Admin123"),
+                    rol="ADMIN",
+                    ciudad="BOGOTA",
+                    compania_id=None,
+                )
+            )
+        else:
+            admin_bogota.ciudad = "BOGOTA"
+
+        primera_compania = (await db.execute(select(Compania).order_by(Compania.id).limit(1))).scalar_one()
+        usuario_demo = (await db.execute(select(Usuario).where(Usuario.correo == "usuario@demo.com"))).scalar_one_or_none()
+        if usuario_demo is None:
+            db.add(
+                Usuario(
+                    nombre="Usuario Tech",
+                    correo="usuario@demo.com",
+                    contrasena_hash=hasher.hash("Usuario123"),
+                    rol="USUARIO",
+                    compania_id=primera_compania.id,
+                )
+            )
+        await db.commit()
         return
 
     c1 = Compania(nombre="Tech Solutions S.A.S", direccion="Calle 45 # 10-20", telefono="3001234567")
@@ -46,7 +77,8 @@ async def seed_data(db: AsyncSession):
     ]
 
     usuarios = [
-        Usuario(nombre="Administrador", correo="admin@demo.com", contrasena_hash=hasher.hash("Admin123"), rol="ADMIN", compania_id=None),
+        Usuario(nombre="Administrador Medellin", correo="admin@demo.com", contrasena_hash=hasher.hash("Admin123"), rol="ADMIN", ciudad="MEDELLIN", compania_id=None),
+        Usuario(nombre="Administrador Bogota", correo="admin.bogota@demo.com", contrasena_hash=hasher.hash("Admin123"), rol="ADMIN", ciudad="BOGOTA", compania_id=None),
         Usuario(nombre="Usuario Tech", correo="usuario@demo.com", contrasena_hash=hasher.hash("Usuario123"), rol="USUARIO", compania_id=c1.id),
     ]
 

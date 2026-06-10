@@ -12,6 +12,7 @@ No cambian el ORM ni usan SQLite.
 """
 
 from fastapi.testclient import TestClient
+from uuid import uuid4
 from api.main import app
 
 
@@ -42,12 +43,13 @@ def test_listado_paginado_empleados():
 def test_bulk_patch_y_delete_lote():
     with TestClient(app) as client:
         headers = auth_headers(client)
+        suffix = uuid4().hex[:8]
         bulk = {
             "empleados": [
                 {
                     "nombre": "Pedro",
                     "apellido": "Bulk",
-                    "correo": "pedro.bulk@example.com",
+                    "correo": f"pedro.bulk.{suffix}@example.com",
                     "cargo": "QA",
                     "salario": 2500,
                     "compania_id": 1,
@@ -55,7 +57,7 @@ def test_bulk_patch_y_delete_lote():
                 {
                     "nombre": "Lucia",
                     "apellido": "Bulk",
-                    "correo": "lucia.bulk@example.com",
+                    "correo": f"lucia.bulk.{suffix}@example.com",
                     "cargo": "Dev",
                     "salario": 3000,
                     "compania_id": 1,
@@ -66,7 +68,8 @@ def test_bulk_patch_y_delete_lote():
         assert created.status_code == 201
         ids = [item["id"] for item in created.json()]
 
-        patched = client.patch(f"/api/empleados/{ids[0]}", json={"cargo": "Lead QA"}, headers=headers)
+        bogota_headers = auth_headers(client, "admin.bogota@demo.com", "Admin123")
+        patched = client.patch(f"/api/empleados/{ids[0]}", json={"cargo": "Lead QA"}, headers=bogota_headers)
         assert patched.status_code == 200
 
         deleted = client.request("DELETE", "/api/empleados/lote", json={"ids": ids}, headers=headers)
@@ -85,6 +88,20 @@ def test_policy_owner_permite_editar_empleado_de_su_compania():
         headers = auth_headers(client, "usuario@demo.com", "Usuario123")
         response = client.patch("/api/empleados/1", json={"cargo": "Actualizado por policy"}, headers=headers)
         assert response.status_code == 200
+
+
+def test_admin_medellin_no_puede_patch():
+    with TestClient(app) as client:
+        headers = auth_headers(client)
+        response = client.patch("/api/empleados/1", json={"cargo": "No permitido"}, headers=headers)
+        assert response.status_code == 403
+
+
+def test_admin_bogota_no_puede_delete():
+    with TestClient(app) as client:
+        headers = auth_headers(client, "admin.bogota@demo.com", "Admin123")
+        response = client.delete("/api/empleados/1", headers=headers)
+        assert response.status_code == 403
 
 
 def test_rollback_transaccional_compania_con_empleados():

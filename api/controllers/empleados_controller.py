@@ -10,7 +10,11 @@ from application.dtos.empleado_dto import (
     EmpleadoResponseDTO,
     EmpleadoUpdateDTO,
 )
-from api.middlewares.security import get_current_user, require_admin, require_empleado_owner_or_admin, require_roles
+from api.middlewares.security import (
+    require_admin_city_policy,
+    require_empleado_owner_or_admin_city_policy,
+    require_roles_with_admin_city_policy,
+)
 
 router = APIRouter(prefix="/api/empleados", tags=["Empleados"])
 
@@ -23,43 +27,43 @@ async def get_all(
     dir: str = "asc",
     buscar: str | None = None,
     uow: IUnitOfWork = Depends(get_uow),
-    _usuario=Depends(get_current_user),
+    _usuario=Depends(require_roles_with_admin_city_policy("GET", "ADMIN", "USUARIO")),
 ):
     return await EmpleadoService(uow).get_paged(pagina, tamano, orden, dir, buscar)
 
 
 @router.post("/lote", response_model=list[EmpleadoResponseDTO], status_code=status.HTTP_201_CREATED)
-async def create_lote(dto: EmpleadoBulkCreateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_roles("ADMIN", "USUARIO"))):
+async def create_lote(dto: EmpleadoBulkCreateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_roles_with_admin_city_policy("POST", "ADMIN", "USUARIO"))):
     return await EmpleadoService(uow).create_range(dto.empleados)
 
 
 @router.delete("/lote", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_lote(dto: EmpleadoDeleteRangeDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_admin)):
+async def delete_lote(dto: EmpleadoDeleteRangeDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_admin_city_policy("DELETE"))):
     await EmpleadoService(uow).delete_range(dto.ids)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{id}", response_model=EmpleadoResponseDTO)
-async def get_by_id(id: int, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(get_current_user)):
+async def get_by_id(id: int, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_roles_with_admin_city_policy("GET", "ADMIN", "USUARIO"))):
     return await EmpleadoService(uow).get_by_id(id)
 
 
 @router.post("", response_model=EmpleadoResponseDTO, status_code=status.HTTP_201_CREATED)
-async def create(dto: EmpleadoCreateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_roles("ADMIN", "USUARIO"))):
+async def create(dto: EmpleadoCreateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_roles_with_admin_city_policy("POST", "ADMIN", "USUARIO"))):
     return await EmpleadoService(uow).create(dto)
 
 
 @router.put("/{id}", response_model=EmpleadoResponseDTO)
-async def update(id: int, dto: EmpleadoUpdateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_empleado_owner_or_admin)):
+async def update(id: int, dto: EmpleadoUpdateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_empleado_owner_or_admin_city_policy("PUT"))):
     return await EmpleadoService(uow).update(id, dto)
 
 
 @router.patch("/{id}", response_model=EmpleadoResponseDTO)
-async def patch(id: int, dto: EmpleadoUpdateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_empleado_owner_or_admin)):
+async def patch(id: int, dto: EmpleadoUpdateDTO, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_empleado_owner_or_admin_city_policy("PATCH"))):
     return await EmpleadoService(uow).patch(id, dto)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_admin)):
+async def delete(id: int, uow: IUnitOfWork = Depends(get_uow), _usuario=Depends(require_admin_city_policy("DELETE"))):
     await EmpleadoService(uow).delete(id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

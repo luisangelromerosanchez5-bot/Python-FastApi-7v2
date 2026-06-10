@@ -9,6 +9,7 @@ class UsuarioRegistroDTO(BaseModel):
     correo: str
     contrasena: str = Field(min_length=6, max_length=100)
     rol: RolUsuario = RolUsuario.USUARIO
+    ciudad: str | None = Field(None, min_length=2, max_length=100)
     compania_id: int | None = Field(None, gt=0)
 
     @field_validator("correo")
@@ -35,6 +36,7 @@ class UsuarioResponseDTO(BaseModel):
     nombre: str
     correo: str
     rol: str
+    ciudad: str | None
     compania_id: int | None
     fecha_creacion: datetime
 
